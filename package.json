@@ -1,0 +1,42 @@
+{
+  "name": "claude-discord-mcp",
+  "version": "1.0.1",
+  "description": "Discord MCP Server for Claude Code - Send messages, manage channels, threads, reactions, and more",
+  "type": "module",
+  "bin": {
+    "claude-discord-mcp": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "start": "node build/index.js",
+    "start:http": "node build/http-server.js"
+  },
+  "keywords": [
+    "mcp",
+    "discord",
+    "claude",
+    "claude-code",
+    "model-context-protocol",
+    "discord-bot"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "discord.js": "^14.18.0",
+    "express": "^5.2.1",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
