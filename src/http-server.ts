@@ -31,16 +31,37 @@ function createMcpServer(): McpServer {
 const app = express();
 app.use(express.json());
 
+// API Key authentication
+const API_KEY = process.env.MCP_API_KEY;
+if (!API_KEY) {
+  console.error("MCP_API_KEY environment variable is required");
+  process.exit(1);
+}
+
+function authMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Missing or invalid Authorization header" });
+    return;
+  }
+  const token = authHeader.slice(7);
+  if (token !== API_KEY) {
+    res.status(403).json({ error: "Invalid API key" });
+    return;
+  }
+  next();
+}
+
 // Store active sessions
 const sessions = new Map<string, { transport: StreamableHTTPServerTransport; server: McpServer }>();
 
-// Health check
+// Health check (no auth required)
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
 // Streamable HTTP endpoint - POST (main interaction)
-app.post("/mcp", async (req, res) => {
+app.post("/mcp", authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
   // Existing session
@@ -70,7 +91,7 @@ app.post("/mcp", async (req, res) => {
 });
 
 // Streamable HTTP endpoint - GET (server-initiated messages)
-app.get("/mcp", async (req, res) => {
+app.get("/mcp", authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   if (!sessionId || !sessions.has(sessionId)) {
     res.status(400).json({ error: "Invalid or missing session ID" });
@@ -81,7 +102,7 @@ app.get("/mcp", async (req, res) => {
 });
 
 // Streamable HTTP endpoint - DELETE (session termination)
-app.delete("/mcp", async (req, res) => {
+app.delete("/mcp", authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   if (!sessionId || !sessions.has(sessionId)) {
     res.status(400).json({ error: "Invalid or missing session ID" });
