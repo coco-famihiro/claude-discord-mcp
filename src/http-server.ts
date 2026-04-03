@@ -31,6 +31,16 @@ function createMcpServer(): McpServer {
 const app = express();
 app.use(express.json());
 
+// Ensure Accept header includes text/event-stream for MCP protocol compatibility
+// Some clients (e.g., claude.ai connectors) may only send Accept: application/json
+app.use("/mcp", (req: express.Request, _res: express.Response, next: express.NextFunction) => {
+  const accept = req.headers.accept || "";
+  if (!accept.includes("text/event-stream")) {
+    req.headers.accept = accept ? accept + ", text/event-stream" : "application/json, text/event-stream";
+  }
+  next();
+});
+
 // API Key authentication
 const API_KEY = process.env.MCP_API_KEY;
 if (!API_KEY) {
