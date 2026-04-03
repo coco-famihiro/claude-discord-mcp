@@ -70,12 +70,18 @@ if (!API_KEY) {
 }
 
 function authMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  // Support both Authorization header and query parameter token
+  let token: string | undefined;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Missing or invalid Authorization header" });
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.slice(7);
+  } else if (req.query.token) {
+    token = req.query.token as string;
+  }
+  if (!token) {
+    res.status(401).json({ error: "Missing authentication: use Authorization header or ?token= query parameter" });
     return;
   }
-  const token = authHeader.slice(7);
   if (token !== API_KEY) {
     res.status(403).json({ error: "Invalid API key" });
     return;
