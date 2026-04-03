@@ -31,6 +31,19 @@ function createMcpServer(): McpServer {
 const app = express();
 app.use(express.json());
 
+// CORS support for claude.ai connector
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Mcp-Session-Id, Accept");
+  res.header("Access-Control-Expose-Headers", "Mcp-Session-Id");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 // Ensure Accept header includes text/event-stream for MCP protocol compatibility
 // Patches both headers and rawHeaders so @hono/node-server picks up the change
 app.use("/mcp", (req: express.Request, _res: express.Response, next: express.NextFunction) => {
