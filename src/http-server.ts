@@ -32,11 +32,19 @@ const app = express();
 app.use(express.json());
 
 // Ensure Accept header includes text/event-stream for MCP protocol compatibility
-// Some clients (e.g., claude.ai connectors) may only send Accept: application/json
+// Patches both headers and rawHeaders so @hono/node-server picks up the change
 app.use("/mcp", (req: express.Request, _res: express.Response, next: express.NextFunction) => {
   const accept = req.headers.accept || "";
   if (!accept.includes("text/event-stream")) {
-    req.headers.accept = accept ? accept + ", text/event-stream" : "application/json, text/event-stream";
+    const newAccept = accept ? accept + ", text/event-stream" : "application/json, text/event-stream";
+    req.headers.accept = newAccept;
+    // Also patch rawHeaders for @hono/node-server which reads from raw headers
+    const idx = req.rawHeaders.findIndex((h: string) => h.toLowerCase() === "accept");
+    if (idx !== -1 && idx + 1 < req.rawHeaders.length) {
+      req.rawHeaders[idx + 1] = newAccept;
+    } else {
+      req.rawHeaders.push("Accept", newAccept);
+    }
   }
   next();
 });
