@@ -106,6 +106,7 @@ app.post("/mcp", authMiddleware, async (req, res) => {
   const server = createMcpServer();
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
+    enableJsonResponse: true,
   });
 
   transport.onclose = () => {
